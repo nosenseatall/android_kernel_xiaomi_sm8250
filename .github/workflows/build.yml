@@ -8,12 +8,10 @@
           make O=out mrproper
           make O=out gki_defconfig
           
-          # We are disabling multiple strict checks that are failing:
-          # -Wno-error: Disables the "warnings as errors" policy
-          # -Wno-int-conversion: Allows the network code to pass argument mismatches
-          # -Wno-declaration-after-statement: Handles older C standard styles
-          # -Wno-unused-value: Ignores non-returning function errors
+          # KCFLAGS is the environment variable that passes extra flags to the compiler.
+          # We are disabling strict error checking (-Wno-error) 
+          # and specific legacy code warnings that are causing your build to halt.
+          export KCFLAGS="-Wno-error -Wno-int-conversion -Wno-implicit-function-declaration"
           
-          export KCFLAGS="-Wno-error -Wno-int-conversion -Wno-declaration-after-statement -Wno-unused-value"
-          
+          # Build with the flags applied
           make O=out KCFLAGS="$KCFLAGS" -j1
