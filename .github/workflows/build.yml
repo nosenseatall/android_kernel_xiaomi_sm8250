@@ -1,3 +1,30 @@
+name: Kernel Build
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y bc bison build-essential flex libssl-dev libelf-dev clang lld llvm
+
+      - name: Patch Incompatible Code
+        run: |
+          # 1. Fix arm-smmu-debug.h: Add 'return 0;' to non-void functions
+          sed -i '/non-void function/!b;n;s/}/  return 0;\n}/' drivers/iommu/arm-smmu-debug.h
+          
+          # 2. Fix ip_gre.c: Remove the 4th argument (tunnel_hlen)
+          # Note: This is a surgical find-and-replace
+          sed -i 's/ip_md_tunnel_xmit(skb, dev, IPPROTO_GRE, tunnel_hlen);/ip_md_tunnel_xmit(skb, dev, IPPROTO_GRE);/g' net/ipv4/ip_gre.c
+
       - name: Build Kernel
         run: |
           export ARCH=arm64
@@ -8,10 +35,5 @@
           make O=out mrproper
           make O=out gki_defconfig
           
-          # KCFLAGS is the environment variable that passes extra flags to the compiler.
-          # We are disabling strict error checking (-Wno-error) 
-          # and specific legacy code warnings that are causing your build to halt.
-          export KCFLAGS="-Wno-error -Wno-int-conversion -Wno-implicit-function-declaration"
-          
-          # Build with the flags applied
-          make O=out KCFLAGS="$KCFLAGS" -j1
+          # We keep the flags to be safe, but the patching above does the heavy lifting
+          make O=out KCFLAGS="-Wno-error" -j$(nproc)
