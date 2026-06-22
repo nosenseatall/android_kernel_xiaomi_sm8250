@@ -24,8 +24,11 @@ jobs:
           
           mkdir -p out
           
+          # Clean everything to prevent 'redefinition' ghosts
+          make O=out mrproper
+          
+          # Re-generate config
           make O=out gki_defconfig
           
-          # KCFLAGS="-Wno-error" tells the compiler to ignore warnings
-          # -j1 keeps the build sequential so we can see if it hits a NEW error
+          # Build sequentially, ignoring warnings, and skipping error stops
           make O=out KCFLAGS="-Wno-error" -j1
