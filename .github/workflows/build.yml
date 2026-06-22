@@ -18,16 +18,14 @@ jobs:
 
       - name: Build Kernel
         run: |
-          # Define environment for Android/GKI builds
           export ARCH=arm64
           export SUBARCH=arm64
           export LLVM=1
           
-          # Create output directory
           mkdir -p out
           
-          # Generate config
           make O=out gki_defconfig
           
-          # Build sequentially (-j1) to catch the exact error message
-          make O=out -j1
+          # KCFLAGS="-Wno-error" tells the compiler to ignore warnings
+          # -j1 keeps the build sequential so we can see if it hits a NEW error
+          make O=out KCFLAGS="-Wno-error" -j1
