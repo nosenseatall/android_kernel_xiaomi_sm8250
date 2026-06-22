@@ -3,6 +3,7 @@ name: Kernel Build
 on:
   push:
     branches: [ "main" ]
+  workflow_dispatch:  # <--- ADD THIS LINE HERE
 
 jobs:
   build:
