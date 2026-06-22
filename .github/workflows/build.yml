@@ -13,15 +13,18 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential flex libssl-dev libelf-dev gcc-aarch64-linux-gnu
+          sudo apt-get install -y bc bison build-essential flex libssl-dev libelf-dev
       - name: Build Kernel
         run: |
-          # 1. Set the architecture and compiler
+          # Define standard GKI build environment variables
           export ARCH=arm64
-          export CROSS_COMPILE=aarch64-linux-gnu-
+          export SUBARCH=arm64
+          # Use the LLVM/Clang variables your Makefile expects
+          export LLVM=1
           
-          # 2. Generate the default configuration (using your defconfig)
-          make gki_defconfig
+          # Create an output directory as required by most Android kernels
+          mkdir -p out
           
-          # 3. Compile the kernel
-          make -j$(nproc)
+          # Run the build using the O=out flag
+          make O=out gki_defconfig
+          make O=out -j$(nproc)
