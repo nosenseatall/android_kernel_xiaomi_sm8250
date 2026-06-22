@@ -2,33 +2,49 @@ name: Kernel Build
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout source
+        uses: actions/checkout@v4
 
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y bc bison build-essential flex libssl-dev libelf-dev clang lld llvm
+          sudo apt-get install -y \
+            bc bison build-essential flex libssl-dev libelf-dev \
+            clang llvm lld git python3 rsync
 
       - name: Build Kernel
         run: |
+          set -e
+
           export ARCH=arm64
           export SUBARCH=arm64
           export LLVM=1
-          
+          export LLVM_IAS=1
+
           mkdir -p out
-          
-          # Clean everything to prevent 'redefinition' ghosts
+
+          echo "Cleaning build tree..."
           make O=out mrproper
-          
-          # Re-generate config
+
+          echo "Loading defconfig..."
           make O=out gki_defconfig
-          
-          # Build sequentially, ignoring warnings, and skipping error stops
-          make O=out KCFLAGS="-Wno-error" -j1
+
+          echo "Starting build..."
+          make O=out -j$(nproc) \
+            LLVM=1 LLVM_IAS=1 \
+            CC=clang \
+            LD=ld.lld \
+            AR=llvm-ar \
+            NM=llvm-nm \
+            OBJCOPY=llvm-objcopy \
+            OBJDUMP=llvm-objdump \
+            STRIP=llvm-strip \
+            KCFLAGS="-Wno-error"
