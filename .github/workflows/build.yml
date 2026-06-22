@@ -10,18 +10,24 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+
       - name: Install dependencies
         run: |
           sudo apt-get update
-          # Added clang and lld to the install list
           sudo apt-get install -y bc bison build-essential flex libssl-dev libelf-dev clang lld llvm
+
       - name: Build Kernel
         run: |
+          # Define environment for Android/GKI builds
           export ARCH=arm64
           export SUBARCH=arm64
           export LLVM=1
           
+          # Create output directory
           mkdir -p out
           
+          # Generate config
           make O=out gki_defconfig
-          make O=out -j$(nproc)
+          
+          # Build sequentially (-j1) to catch the exact error message
+          make O=out -j1
